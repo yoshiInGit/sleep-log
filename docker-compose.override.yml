@@ -1,0 +1,13 @@
+# 開発環境用の設定（docker-compose up で自動的に読み込まれる）
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: dev
+    volumes:
+      # ソースコードをマウントしてホットリロードを有効化
+      - ./backend/src:/app/src
+      - ./backend/pom.xml:/app/pom.xml
+      # Maven ローカルリポジトリをキャッシュ
+      - maven-cache:/root/.m2

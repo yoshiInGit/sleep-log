@@ -1,0 +1,29 @@
+# ビルド成果物
+target/
+*.jar
+*.war
+*.ear
+
+# ログファイル
+*.log
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# IDE 固有のファイル
+.idea/
+*.iml
+.vscode/
+.settings/
+.classpath
+.project
+
+# OS 固有のファイル
+.DS_Store
+Thumbs.db
+
+# ドキュメント
+*.md
+HELP.md

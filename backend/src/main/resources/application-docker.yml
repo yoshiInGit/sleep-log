@@ -1,0 +1,30 @@
+# ==========================================
+# Docker環境用設定 (Docker Environment)
+# ==========================================
+# プロファイル: docker
+# 起動時に --spring.profiles.active=docker で有効化
+
+spring:
+  # データソース設定（Docker内DNS解決）
+  # ------------------------------------------
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://db:5432/${POSTGRES_DB}}
+    username: ${SPRING_DATASOURCE_USERNAME:${POSTGRES_USER}}
+    password: ${SPRING_DATASOURCE_PASSWORD:${POSTGRES_PASSWORD}}
+
+  # JPA / Hibernate（Docker環境向け調整）
+  # ------------------------------------------
+  jpa:
+    hibernate:
+      ddl-auto: update # 開発中は便利なのでupdateのままにする（本番はnone推奨）
+    show-sql: true
+    open-in-view: false
+
+# ログレベル設定
+# ------------------------------------------
+logging:
+  level:
+    root: INFO
+    "[com.yoshi.sleep_log]": DEBUG
+    "[org.hibernate.SQL]": DEBUG
+    "[org.hibernate.type.descriptor.sql.BasicBinder]": TRACE

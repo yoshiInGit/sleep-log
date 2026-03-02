@@ -1,0 +1,18 @@
+# 本番環境用の設定
+# 使用方法: docker-compose -f docker-compose.yml -f docker-compose.prod.yml up
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: prod
+    restart: always
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: prod
+    ports:
+      - "80:80"
+    restart: always
