@@ -8,14 +8,14 @@
 
 ## 2. ユビキタス言語
 
-| 用語                      | 定義                                                      | 備考           |
-| ------------------------- | --------------------------------------------------------- | -------------- |
-| ユーザー (User)           | 本システムを利用して睡眠を管理する主体。                  |                |
-| 睡眠記録 (SleepLog)       | 1回の睡眠に関する記録。開始時刻、終了時刻、質などを含む。 | エンティティ   |
-| 就寝時刻 (SleepStartTime) | ユーザーが実際に眠りについた時刻。                        |                |
-| 起床時刻 (SleepEndTime)   | ユーザーが目覚めた時刻。                                  |                |
-| 睡眠時間 (SleepDuration)  | 起床時刻 - 就寝時刻で計算される、実際の睡眠時間。         | 値オブジェクト |
-| 睡眠の質 (SleepQuality)   | ユーザーが5段階等で自己評価した睡眠の深さや満足度。       | 値オブジェクト |
+| 用語                      | 定義                                                | 備考           |
+| ------------------------- | --------------------------------------------------- | -------------- |
+| ユーザー (User)           | 本システムを利用して睡眠を管理する主体。            |                |
+| 睡眠イベント (SleepEvent) | 1回の睡眠に関する個々のイベント（就寝、起床など）。 | エンティティ   |
+| 就寝イベント (SleepStart) | ユーザーが実際に眠りについたことを示すイベント。    |                |
+| 起床イベント (SleepEnd)   | ユーザーが目覚めたことを示すイベント。              |                |
+| 睡眠時間 (SleepDuration)  | 一連の睡眠イベントから計算される、実際の睡眠時間。  | 値オブジェクト |
+| 睡眠の質 (SleepQuality)   | ユーザーが5段階等で自己評価した睡眠の深さや満足度。 | 値オブジェクト |
 
 ## 3. アグリゲート (Aggregate)
 
@@ -27,16 +27,12 @@
   - メールアドレスは一意である必要がある。
   - ユーザー名は必須。
 
-### SleepLog Aggregate
+### SleepEvent Aggregate (Event Stream)
 
-- **概要**: 個々の睡眠記録とその整合性を管理する。
-- **Root Entity**: `SleepLog`
-- **不変条件**:
-  - `SleepStartTime` は `SleepEndTime` よりも前である必要がある。
-  - 1人のユーザーに対して、同時刻に複数の睡眠記録が重なってはいけない（要検討）。
-- **振る舞い**:
-  - `updateQuality`: 睡眠の質を更新する。
-  - `calculateDuration`: 就寝・起床時刻から睡眠時間を算出する。
+- **概要**: 個々の睡眠記録を「イベントの連続」として管理する。
+- **Root Entity**: `SleepEvent`
+- **振る舞いの抽出先**:
+  - イベント自体は「点」であるため、複数のイベントから実際の意味あるセッション（睡眠）を組み立て、時間や質を計算する役割は **ドメインサービス (`SleepSessionService`)** に委譲する。
 
 ```mermaid
 classDiagram
@@ -45,15 +41,19 @@ classDiagram
         +String name
         +String email
     }
-    class SleepLog {
-        +SleepLogId id
+    class SleepEvent {
+        +SleepEventId id
         +UserId userId
-        +DateTime sleepStartTime
-        +DateTime sleepEndTime
-        +SleepQuality quality
-        +calculateDuration() SleepDuration
+        +DateTime eventTime
+        +EventType eventType (START/END)
+        +SleepQuality quality (Optional)
     }
-    User "1" --> "*" SleepLog : owns
+    class SleepSessionService {
+        <<Domain Service>>
+        +calculateTotalDuration(List~SleepEvent~) SleepDuration
+    }
+    User "1" --> "*" SleepEvent : owns
+    SleepEvent ..> SleepSessionService : analyzed by
 ```
 
 ## 4. 値オブジェクト (Value Object)

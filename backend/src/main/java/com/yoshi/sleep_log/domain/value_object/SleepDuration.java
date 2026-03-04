@@ -17,6 +17,13 @@ public class SleepDuration {
 
     private long minutes;
 
+    public SleepDuration(long minutes) {
+        if (minutes < 0) {
+            throw new IllegalArgumentException("Duration cannot be negative");
+        }
+        this.minutes = minutes;
+    }
+
     public SleepDuration(LocalDateTime start, LocalDateTime end) {
         if (start == null || end == null) {
             throw new IllegalArgumentException("Start and end times cannot be null");
@@ -25,6 +32,10 @@ public class SleepDuration {
             throw new IllegalArgumentException("Start time cannot be after end time");
         }
         this.minutes = Duration.between(start, end).toMinutes();
+    }
+
+    public long toMinutes() {
+        return this.minutes;
     }
 
     public long toHours() {
