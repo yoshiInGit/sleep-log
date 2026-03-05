@@ -8,6 +8,7 @@ import com.yoshi.sleep_log.domain.repository.UserRepository;
 import com.yoshi.sleep_log.domain.service.SleepSessionService;
 import com.yoshi.sleep_log.domain.value_object.SleepDuration;
 import com.yoshi.sleep_log.dto.SleepStatsResponse;
+import com.yoshi.sleep_log.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -34,7 +35,7 @@ public class SleepStatsController {
     @GetMapping("/recent")
     public ResponseEntity<SleepStatsResponse> getRecentStats(@RequestParam String email) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
 
         List<SleepEvent> events = sleepEventRepository.findByUserOrderByEventTimeAsc(user);
 
