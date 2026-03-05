@@ -21,33 +21,35 @@ public class SleepSessionService {
      * @return 合計の睡眠時間
      */
     public SleepDuration calculateTotalDuration(List<SleepEvent> events) {
+        return new SleepDuration(calculateSessionDurations(events).stream()
+                .mapToLong(SleepDuration::toMinutes)
+                .sum());
+    }
+
+    /**
+     * イベントリストから個々の睡眠セッションの時間を取得します。
+     */
+    public List<SleepDuration> calculateSessionDurations(List<SleepEvent> events) {
         if (events == null || events.isEmpty()) {
-            return new SleepDuration(0); // 0 minutes
+            return List.of();
         }
 
-        // 時間順にソートする (念のため)
+        // 時間順にソートする
         events.sort(Comparator.comparing(SleepEvent::getEventTime));
 
-        long totalMinutes = 0;
+        java.util.List<SleepDuration> durations = new java.util.ArrayList<>();
         LocalDateTime lastStartTime = null;
 
         for (SleepEvent event : events) {
             if (event.getEventType() == EventType.SLEEP_START) {
-                // 既に開始状態であれば上書き（最新の開始時刻を優先する方針など、適宜ルールを調整）
                 lastStartTime = event.getEventTime();
             } else if (event.getEventType() == EventType.SLEEP_END) {
                 if (lastStartTime != null) {
-                    // Start -> End のペアができたため時間を加算
-                    SleepDuration sessionDuration = new SleepDuration(lastStartTime, event.getEventTime());
-                    totalMinutes += sessionDuration.toMinutes();
-
-                    // 次のセッションに向けてリセット
+                    durations.add(new SleepDuration(lastStartTime, event.getEventTime()));
                     lastStartTime = null;
                 }
-                // lastStartTime が null の場合（STARTなしのEND）は無視またはエラーハンドリング
             }
         }
-
-        return new SleepDuration(totalMinutes);
+        return durations;
     }
 }
