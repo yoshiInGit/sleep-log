@@ -13,12 +13,18 @@ import com.yoshi.sleep_log.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.yoshi.sleep_log.dto.SleepEventItemResponse;
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * 睡眠イベント操作コントローラー
@@ -108,5 +114,38 @@ public class SleepEventController {
                                 "睡眠終了を記録しました");
 
                 return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        }
+
+        /**
+         * 指定期間内の睡眠イベント一覧を取得するエンドポイント。
+         *
+         * @param email ユーザーのメールアドレス（必須）
+         * @param from  取得開始日時（必須, ISO 8601形式: yyyy-MM-ddTHH:mm:ss）
+         * @param to    取得終了日時（必須, ISO 8601形式: yyyy-MM-ddTHH:mm:ss）
+         * @return 200 OK + 期間内のイベントリスト（該当なしの場合は空リスト）
+         */
+        @GetMapping
+        public ResponseEntity<List<SleepEventItemResponse>> getEventsByPeriod(
+                        @RequestParam String email,
+                        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime from,
+                        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime to) {
+
+                // メールアドレスでユーザーを取得（存在しない場合は 404 を返す）
+                User user = userRepository.findByEmail(email)
+                                .orElseThrow(() -> new ResourceNotFoundException(
+                                                "指定されたメールアドレスのユーザーが見つかりません: " + email));
+
+                // 指定期間内のイベントを取得し DTO へ変換する
+                List<SleepEventItemResponse> responses = sleepEventRepository
+                                .findByUserAndEventTimeBetweenOrderByEventTimeAsc(user, from, to)
+                                .stream()
+                                .map(e -> new SleepEventItemResponse(
+                                                e.getId(),
+                                                e.getEventType(),
+                                                e.getEventTime(),
+                                                e.getQuality() != null ? e.getQuality().getDescription() : null))
+                                .collect(Collectors.toList());
+
+                return ResponseEntity.ok(responses);
         }
 }
